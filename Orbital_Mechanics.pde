@@ -256,7 +256,7 @@ class Rocket {
       text(String.format("%.2f", totalPlanetAcceleration.mag()) + "m/s^2", 120, 20);
       text(String.format("%.2f", velocity.mag()) + "m/s", 280, 20);
 
-      float x1Line = 400, y1Line = 12;
+      float x1Line = 420, y1Line = 12;
       float alpha = PVector.angleBetween(totalPlanetAcceleration, PVector.fromAngle(0));
 
       int below = 1;
