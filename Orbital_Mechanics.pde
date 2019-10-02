@@ -1,4 +1,4 @@
-final float G = 6.674e-11;
+final float G = 6.674e-11; //<>// //<>//
 final float AU = 149597870700.0;
 
 final int headerHeight = 25;
@@ -8,6 +8,9 @@ final color courseColor = color(#FFC246);
 final int NR_FRAMETIME_AVG = 10;
 
 final int targetFPS = 60;
+final float timeIncrement = 1 / (float)targetFPS;
+
+final int PROJECTION_RESOLUTION = 1;
 
 ArrayList<Planet> planets;
 ArrayList<Rocket> rockets;
@@ -29,7 +32,7 @@ void setup() {
   size(600, 620);
   background(255, 255, 255);
   frameRate(targetFPS);
-  
+
   pastFrameTimes = new float[NR_FRAMETIME_AVG];
 
   planets = new ArrayList<Planet>();
@@ -78,9 +81,9 @@ void setup() {
   Rocket rocket = new Rocket();
   rocket.pos.set(50.0, 320.0);
   //rocket.velocity.set(1000.0, 1000.0);
-  rocket.velocity.set(5, -94);
+  rocket.velocity.set(5, -93);
   rockets.add(rocket);
-  
+
   rockets.get(0).showData = true;
 }
 
@@ -88,16 +91,16 @@ void draw() {
   //println("Frame: " + frameCount);
   //curTime = millis();
   //frameTime = (curTime - prevTime) / 1000.0;
-  
+
   /*pastFrameTimes[pastFrameTimePointer] = frameTime;
-  pastFrameTimePointer = (pastFrameTimePointer + 1) % NR_FRAMETIME_AVG;
-  
-  float frameTimeSum = 0;
-  for (int i = 0; i < NR_FRAMETIME_AVG; i++) {
-    frameTimeSum += pastFrameTimes[i];
-  }
-  avgFrameTime = frameTimeSum / NR_FRAMETIME_AVG;*/
-  
+   pastFrameTimePointer = (pastFrameTimePointer + 1) % NR_FRAMETIME_AVG;
+   
+   float frameTimeSum = 0;
+   for (int i = 0; i < NR_FRAMETIME_AVG; i++) {
+   frameTimeSum += pastFrameTimes[i];
+   }
+   avgFrameTime = frameTimeSum / NR_FRAMETIME_AVG;*/
+
   /*color bg = color (255, 255, 255, 5);
    fill(bg);
    noStroke();
@@ -118,20 +121,27 @@ void draw() {
 
   for (int n = 0; n < rockets.size(); n++) {
     rockets.get(n).generate();
-    ArrayList<PVector> coursePoints = rockets.get(n).plotCourse(300, 1 / (1 * (float)targetFPS));
-    //loadPixels();
-    for (int i = 0; i < coursePoints.size(); i++) {
-      //pixels[(int)coursePoints.get(i).x + (int)coursePoints.get(i).y * width] = courseColor;
-      set((int)coursePoints.get(i).x, (int)coursePoints.get(i).y, courseColor);
+    if (rockets.get(n).showData) {
+      ArrayList<PVector> coursePoints = rockets.get(n).plotCourse(1500);
+      /*println("\nCur: " + rockets.get(0).pos);
+       println("1:   " + coursePoints.get(0));
+       println("2:   " + coursePoints.get(1));
+       println("3:   " + coursePoints.get(2));
+       println("4:   " + coursePoints.get(3));*/
+      //loadPixels();
+      for (int i = 0; i < coursePoints.size(); i++) {
+        //pixels[(int)coursePoints.get(i).x + (int)coursePoints.get(i).y * width] = courseColor;
+        set((int)coursePoints.get(i).x, (int)coursePoints.get(i).y, courseColor);
+      }
+      //updatePixels();
     }
-    //updatePixels();
   }
 
   if (frameCount == 5) {
-      //exit();
+    //exit();
   }
-  
-  if (generateRocket) { //<>//
+
+  if (generateRocket) {
     generateRocket = false;
 
     Rocket rocket = new Rocket();
@@ -139,27 +149,25 @@ void draw() {
     rocket.velocity.set(random(-50, 50), random(-50, 50));
     rockets.add(rocket);
   }
-  
+
   if (switchInfo) {
     switchInfo = false;
     rockets.get(displayInfo).showData = false;
     displayInfo = (displayInfo + 1) % rockets.size();
     rockets.get(displayInfo).showData = true;
   }
-  
+
   if (toggleRunPlanets) {
-    planetsMoveOffset++;
+    planetsMoveOffset--;
   }
 }
 
 void mouseClicked () {
   if (mouseButton == LEFT) {
     generateRocket = true;
-  }
-  else if (mouseButton == RIGHT) {
+  } else if (mouseButton == RIGHT) {
     switchInfo = true;
-  }
-  else if (mouseButton == CENTER) {
+  } else if (mouseButton == CENTER) {
     if (toggleRunPlanets) {
       toggleRunPlanets = false;
     } else {
@@ -168,18 +176,20 @@ void mouseClicked () {
   }
 }
 
-PVector calcPlanetAcceleration (Rocket rocket, Planet planet, float timeOffset) {
+PVector calcPlanetAcceleration (Rocket rocket, Planet planet, int frameOffset) {
   PVector planetPos = new PVector();
   PVector rocketPos = new PVector();
   PVector acceleration = new PVector();
   boolean below = false;
 
-  if (timeOffset == 0) {
+  if (frameOffset == 0) {
     planetPos = planet.pos;
     rocketPos = rocket.pos;
   } else {
-    planetPos = planet.calcMove(timeOffset);
+    planetPos = planet.calcMove(frameOffset);
     rocketPos = rocket.projectedPos;
+    if (frameOffset < 4) {
+    }
   }
 
   float xDistance = planetPos.x - rocketPos.x, yDistance = planetPos.y - rocketPos.y;
@@ -215,18 +225,16 @@ class Planet {
     centerPos = new PVector();
   }
 
-  public PVector calcMove(float timeOffset) {
+  public PVector calcMove(int frameOffset) {
     PVector moveToPos = new PVector();
-    //moveToPos.x = centerPos.x + orbitRadius * cos((curTime / 1000.0 + timeOffset) / orbitTime * 2*PI + orbitOffset);
-    //moveToPos.y = centerPos.y + orbitRadius * sin((curTime / 1000.0 + timeOffset) / orbitTime * 2*PI + orbitOffset);
-    moveToPos.x = centerPos.x + orbitRadius * cos(( (frameCount - planetsMoveOffset) * (1 / (float)targetFPS) + timeOffset) / orbitTime * 2*PI + orbitOffset);
-    moveToPos.y = centerPos.y + orbitRadius * sin(( (frameCount - planetsMoveOffset) * (1 / (float)targetFPS) + timeOffset) / orbitTime * 2*PI + orbitOffset);
+    moveToPos.x = centerPos.x + orbitRadius * cos( ( (frameCount + planetsMoveOffset + frameOffset) * timeIncrement) / orbitTime * 2*PI + orbitOffset);
+    moveToPos.y = centerPos.y + orbitRadius * sin( ( (frameCount + planetsMoveOffset + frameOffset) * timeIncrement) / orbitTime * 2*PI + orbitOffset);
     /*println("curFrame: " + (frameCount * (1 / (float)targetFPS)));
-    println("curFrame + offset: " + (frameCount * (1 / (float)targetFPS) + timeOffset));
-    println("curTime: " + curTime / 1000.0);
-    println("curTime + offset: " + (curTime / 1000.0 + timeOffset));*/
+     println("curFrame + offset: " + (frameCount * (1 / (float)targetFPS) + timeOffset));
+     println("curTime: " + curTime / 1000.0);
+     println("curTime + offset: " + (curTime / 1000.0 + timeOffset));*/
     /*println("Planet x: " + moveToPos.x);
-    println("Planet y: " + moveToPos.y);*/
+     println("Planet y: " + moveToPos.y);*/
     return moveToPos;
   }
 
@@ -236,9 +244,9 @@ class Planet {
   }
 
   public void generate() {
-    fill(255, 255, 255);
-    noStroke();
-    circle(pos.x / distanceScale, pos.y / distanceScale, (size * 1.2) / sizeScale);
+    /*fill(255, 255, 255);
+     noStroke();
+     circle(pos.x / distanceScale, pos.y / distanceScale, (size * 1.2) / sizeScale);*/
 
     PVector newPos = new PVector();
     newPos = calcMove(0);
@@ -289,10 +297,10 @@ class Rocket {
       totalPlanetAcceleration.add(calcPlanetAcceleration(this, planets.get(i), 0));
     }
 
-    newVel.x = velocity.x + acceleration.x * 1 / (float)targetFPS + totalPlanetAcceleration.x * 1 / (float)targetFPS;
-    newVel.y = velocity.y + acceleration.y * 1 / (float)targetFPS + totalPlanetAcceleration.y * 1 / (float)targetFPS;
-    newPos.x = pos.x + newVel.x * 1 / (float)targetFPS;
-    newPos.y = pos.y + newVel.y * 1 / (float)targetFPS;
+    newVel.x = velocity.x + acceleration.x * timeIncrement + totalPlanetAcceleration.x * timeIncrement;
+    newVel.y = velocity.y + acceleration.y * timeIncrement + totalPlanetAcceleration.y * timeIncrement;
+    newPos.x = pos.x + newVel.x * timeIncrement;
+    newPos.y = pos.y + newVel.y * timeIncrement;
     //println("x: " + newPos.x);
     //println("y: " + newPos.y);
 
@@ -337,7 +345,7 @@ class Rocket {
     return;
   }
 
-  public ArrayList<PVector> plotCourse(int futureSteps, float timeIncrement) {
+  public ArrayList<PVector> plotCourse(int futureSteps) {
     ArrayList<PVector> coursePoints = new ArrayList<PVector>();
 
     PVector newProjectedPos = new PVector();
@@ -350,9 +358,10 @@ class Rocket {
     PVector projectedPlanetAcceleration = new PVector();
 
     for (int i = 0; i < futureSteps; i++) {
-      //println("Course " + i + ":");
       for (int n = 0; n < planets.size(); n++) {
-        projectedPlanetAcceleration.add((calcPlanetAcceleration(this, planets.get(n), i * timeIncrement)));
+        projectedPlanetAcceleration.add((calcPlanetAcceleration(this, planets.get(n), i)));
+      }
+      if (i < 3) {
       }
 
       newProjectedVel.x = projectedVel.x + acceleration.x * timeIncrement + projectedPlanetAcceleration.x * timeIncrement;
@@ -371,6 +380,8 @@ class Rocket {
 
       projectedVel.x = newProjectedVel.x;
       projectedVel.y = newProjectedVel.y;
+
+      projectedPlanetAcceleration.set(0, 0, 0);
     }
 
     return coursePoints;
