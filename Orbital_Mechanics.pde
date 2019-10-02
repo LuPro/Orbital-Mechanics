@@ -135,6 +135,15 @@ void draw() {
       }
       //updatePixels();
     }
+    if (rockets.get(n).pos.x > width * 2 || rockets.get(n).pos.x < - width || rockets.get(n).pos.y > height * 2 || rockets.get(n).pos.y < - height) {
+      rockets.remove(rockets.get(n));
+      if (displayInfo < rockets.size()) {
+        rockets.get(displayInfo).showData = true;
+      }
+      else if (rockets.size() > 0) {
+        rockets.get(0).showData = true;
+      }
+    }
   }
 
   if (frameCount == 5) {
@@ -152,7 +161,9 @@ void draw() {
 
   if (switchInfo) {
     switchInfo = false;
-    rockets.get(displayInfo).showData = false;
+    for (int i = 0; i < rockets.size(); i++) {
+      rockets.get(i).showData = false;
+    }
     displayInfo = (displayInfo + 1) % rockets.size();
     rockets.get(displayInfo).showData = true;
   }
@@ -185,14 +196,14 @@ PVector calcPlanetAcceleration (Rocket rocket, Planet planet, int frameOffset) {
   if (frameOffset == 0) {
     planetPos = planet.pos;
     rocketPos = rocket.pos;
-    println("\nCurpp: " + planetPos);
-    println("Currp: " + rocketPos);
+    /*println("\nCurpp: " + planetPos);
+     println("Currp: " + rocketPos);*/
   } else {
     planetPos = planet.calcMove(frameOffset);
     rocketPos = rocket.projectedPos;
     if (frameOffset < 4) {
-      println(frameOffset + "pp:   " + planetPos);
-      println(frameOffset + "rp:   " + rocketPos);
+      /*println(frameOffset + "pp:   " + planetPos);
+       println(frameOffset + "rp:   " + rocketPos);*/
     }
   }
 
@@ -300,7 +311,7 @@ class Rocket {
     for (int i = 0; i < planets.size(); i++) {
       totalPlanetAcceleration.add(calcPlanetAcceleration(this, planets.get(i), 0));
     }
-    println("\nCur a: " + totalPlanetAcceleration);
+    //println("\nCur a: " + totalPlanetAcceleration);
 
     newVel.x = velocity.x + acceleration.x * timeIncrement + totalPlanetAcceleration.x * timeIncrement;
     newVel.y = velocity.y + acceleration.y * timeIncrement + totalPlanetAcceleration.y * timeIncrement;
@@ -367,7 +378,7 @@ class Rocket {
         projectedPlanetAcceleration.add((calcPlanetAcceleration(this, planets.get(n), i + 1)));
       }
       if (i < 3) {
-        println(i + " a:   " + projectedPlanetAcceleration);
+        //println(i + " a:   " + projectedPlanetAcceleration);
       }
 
       newProjectedVel.x = projectedVel.x + acceleration.x * timeIncrement + projectedPlanetAcceleration.x * timeIncrement;
